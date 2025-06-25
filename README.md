@@ -1,8 +1,9 @@
 # Dynamic Retrocausal Simulator
 ## Overview
 This repository hosts a Jupyter Notebook implementation of a retrocausality simulation, investigating how predictive modeling 
-and rule-based behavior shape multi-agent interactions within a constrained environment. The project simulates 30 agents 
-navigating a 10×10 grid over 10 steps, employing a Temporal Convolutional Network (TCN) to forecast future moves and 
+and rule-based behavior shape multi-agent interactions within a constrained environment. 
+
+The project simulates 30 agents navigating a 10×10 grid over 10 steps, employing a Temporal Convolutional Network (TCN) to forecast future moves and 
 enforce rules to prevent collisions. The primary objective is to compare outcomes with and without rules, 
 illustrating the effect of predictive adjustments on agent behavior.
 
