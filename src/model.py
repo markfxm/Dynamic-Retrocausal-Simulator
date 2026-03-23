@@ -2,10 +2,11 @@ import torch
 import torch.nn as nn
 import mesa
 import random
+from config import MAX_VAL
 
 # TCN Model
 class TCN(nn.Module):
-    def __init__(self, input_size=6, num_channels=[128, 128, 128], kernel_size=7, output_size=1):
+    def __init__(self, input_size=12, num_channels=[128, 128, 128], kernel_size=7, output_size=1):
         super(TCN, self).__init__()
         layers = []
         for i in range(len(num_channels)):
@@ -58,7 +59,7 @@ class RetroAgent(mesa.Agent):
         apply_retro = (self.unique_id == 0 and self.model.tcn is not None)
         
         if apply_retro:
-            max_val = 5.0
+            max_val = MAX_VAL
             pos_list = list(self.pos)
             rel_pos = self.get_relative_positions()
             current_features = [p / max_val for p in pos_list] + [r / max_val for r in rel_pos]
@@ -93,7 +94,7 @@ class RetroAgent(mesa.Agent):
             self.model.grid.move_agent(self, new_pos)
 
 class RetroModel(mesa.Model):
-    def __init__(self, allow_collisions=False, tcn_path=None, width=5, height=5, num_agents=3):
+    def __init__(self, allow_collisions=ALLOW_COLLISIONS, tcn_path=TCN_MODEL_PATH, width=GRID_WIDTH, height=GRID_HEIGHT, num_agents=NUM_AGENTS):
         super().__init__()
         self.grid = mesa.space.MultiGrid(width, height, torus=False)
         self.schedule = mesa.time.RandomActivation(self)
@@ -102,7 +103,7 @@ class RetroModel(mesa.Model):
         
         if tcn_path:
             # Matches training config from notebook for 3 agents 5x5
-            self.tcn = TCN(input_size=12, num_channels=[64, 64, 32], kernel_size=5, output_size=1)
+            self.tcn = TCN(input_size=TCN_INPUT_SIZE, num_channels=TCN_NUM_CHANNELS, kernel_size=TCN_KERNEL_SIZE, output_size=TCN_OUTPUT_SIZE)
             try:
                 self.tcn.load_state_dict(torch.load(tcn_path, map_location=torch.device('cpu')))
             except Exception as e:

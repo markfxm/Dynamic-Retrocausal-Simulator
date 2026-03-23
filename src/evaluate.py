@@ -5,8 +5,9 @@ import pickle
 import pathlib
 from sklearn.metrics import confusion_matrix
 from torch.utils.data import DataLoader, TensorDataset
-from simulation_core import TCN
-from train_model import prepare_training_data
+from config import MIXED_DATA_PATH, TCN_MODEL_PATH, TCN_INPUT_SIZE, TCN_NUM_CHANNELS, TCN_KERNEL_SIZE, TCN_OUTPUT_SIZE
+from src.model import TCN
+from src.tcn import prepare_training_data
 
 def evaluate_model(model, X, y, criterion):
     dataset = TensorDataset(torch.FloatTensor(X).permute(0, 2, 1), torch.FloatTensor(y))
@@ -33,14 +34,14 @@ def evaluate_model(model, X, y, criterion):
 
 def run_analysis():
     print("--- DEEP MODEL ANALYSIS ---")
-    data_path = pathlib.Path('MixedData/abm_mixed_3agents_5x5_collisions.pkl')
+    data_path = pathlib.Path(MIXED_DATA_PATH)
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
     X, y = prepare_training_data(data)
     
-    model = TCN(input_size=12, num_channels=[64, 64, 32], kernel_size=5, output_size=1)
+    model = TCN(input_size=TCN_INPUT_SIZE, num_channels=TCN_NUM_CHANNELS, kernel_size=TCN_KERNEL_SIZE, output_size=TCN_OUTPUT_SIZE)
     try:
-        model.load_state_dict(torch.load('MixedData/tcn_model.pt'))
+        model.load_state_dict(torch.load(TCN_MODEL_PATH))
         print("Model loaded successfully.")
     except:
         print("Could not load model weights. Please run train_model.py first.")

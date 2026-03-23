@@ -3,15 +3,16 @@ import matplotlib.animation as animation
 import random
 import torch
 import numpy as np
-from simulation_core import RetroModel
+from config import GRID_WIDTH, GRID_HEIGHT, NUM_AGENTS, TCN_MODEL_PATH, RESULTS_DIR
+from src.model import RetroModel
 
-def visualize_comparison(steps=20, output_file='simulation_comparison.gif'):
+def create_animation(steps=20, output_file=f'{RESULTS_DIR}/simulation_comparison.gif'):
     # Initialize models
     # Case 1: Random (No Rule, collisions allowed)
-    model_random = RetroModel(allow_collisions=True, width=5, height=5, num_agents=3)
+    model_random = RetroModel(allow_collisions=True, width=GRID_WIDTH, height=GRID_HEIGHT, num_agents=NUM_AGENTS)
     
     # Case 2: Retrocausal (TCN Rule, collisions allowed but avoided)
-    model_retro = RetroModel(allow_collisions=True, tcn_path='MixedData/tcn_model.pt', width=5, height=5, num_agents=3)
+    model_retro = RetroModel(allow_collisions=True, tcn_path=TCN_MODEL_PATH, width=GRID_WIDTH, height=GRID_HEIGHT, num_agents=NUM_AGENTS)
     
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
     
@@ -75,4 +76,4 @@ if __name__ == "__main__":
     # simulation_core.py RetroModel init didn't explicitly initialize collision counters or step logic for counting.
     # Let's monkey patch or rely on visual inspection if counting isn't there.
     # Actually, let's just rely on visual red dots.
-    visualize_comparison()
+    create_animation()

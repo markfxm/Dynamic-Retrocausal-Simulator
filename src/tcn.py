@@ -5,9 +5,9 @@ import numpy as np
 import pathlib
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.model_selection import train_test_split
-from simulation_core import TCN
+from config import *
 
-def prepare_training_data(data, seq_len=5):
+def prepare_training_data(data, seq_len=SEQ_LEN):
     # Filter for agent 0 as the "retrocausal" agent
     agent0_data = [d for d in data if d['agent_id'] == 0]
     X, y = [], []
@@ -48,7 +48,7 @@ def prepare_training_data(data, seq_len=5):
 
 def train():
     # Load Data
-    data_path = pathlib.Path('MixedData/abm_mixed_3agents_5x5_collisions.pkl')
+    data_path = pathlib.Path(MIXED_DATA_PATH)
     if not data_path.exists():
         print(f"Error: {data_path} not found.")
         return
@@ -61,7 +61,7 @@ def train():
     print(f"Training Data: X {X.shape}, y {y.shape}")
     
     # Split
-    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=VAL_TEST_SIZE, random_state=RANDOM_STATE)
     
     # To Tensor
     # Model expects [batch, channels, seq_len] -> [batch, 12, 5]
@@ -69,12 +69,12 @@ def train():
     train_dataset = TensorDataset(torch.FloatTensor(X_train).permute(0, 2, 1), torch.FloatTensor(y_train))
     val_dataset = TensorDataset(torch.FloatTensor(X_val).permute(0, 2, 1), torch.FloatTensor(y_val))
     
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=32)
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE)
     
     # Init Model
     # Input size 12 (2 pos + 10 rel)
-    model = TCN(input_size=12, num_channels=[64, 64, 32], kernel_size=5, output_size=1)
+    model = TCN(input_size=TCN_INPUT_SIZE, num_channels=TCN_NUM_CHANNELS, kernel_size=TCN_KERNEL_SIZE, output_size=TCN_OUTPUT_SIZE)
     
     # Weighted Loss for Imbalance
     if y.mean() > 0:
@@ -83,15 +83,15 @@ def train():
         pos_weight = torch.tensor([1.0])
         
     criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     
     # Train
     best_val_acc = 0
-    patience = 10
+    patience = PATIENCE
     counter = 0
     
     print("Starting training...")
-    for epoch in range(50): # 50 epochs
+    for epoch in range(EPOCHS): # 50 epochs
         model.train()
         for X_batch, y_batch in train_loader:
             optimizer.zero_grad()
@@ -116,7 +116,7 @@ def train():
         
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            torch.save(model.state_dict(), 'MixedData/tcn_model.pt')
+            torch.save(model.state_dict(), TCN_MODEL_PATH)
             counter = 0
         else:
             counter += 1
@@ -125,7 +125,7 @@ def train():
                 break
                 
     print(f"Training complete. Best Acc: {best_val_acc:.4f}")
-    print("Model saved to MixedData/tcn_model.pt")
+    print(f"Model saved to {TCN_MODEL_PATH}")
 
 if __name__ == "__main__":
     train()

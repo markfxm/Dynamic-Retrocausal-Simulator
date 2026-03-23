@@ -1,23 +1,84 @@
 # Dynamic Retrocausal Simulator
-## Overview
-This repository hosts a Jupyter Notebook implementation of a retrocausality simulation, investigating how predictive modeling 
-and rule-based behavior shape multi-agent interactions within a constrained environment. 
 
-The project simulates 30 agents navigating a 10×10 grid over 10 steps, employing a Temporal Convolutional Network (TCN) to forecast future moves and 
-enforce rules to prevent collisions. The primary objective is to compare outcomes with and without rules, 
-illustrating the effect of predictive adjustments on agent behavior.
+## Overview
+This repository implements a retrocausality simulation exploring how predictive modeling and rule-based behavior affect multi-agent interactions in a constrained grid environment.
+
+The project simulates agents navigating a grid, using a Temporal Convolutional Network (TCN) to predict and avoid collisions. The goal is to demonstrate how retrocausal reasoning (predicting future states to influence current behavior) can lead to emergent coordination without explicit communication.
+
+## Project Structure
+```
+Dynamic-Retrocausal-Simulator/
+├── config.py                 # Configuration settings
+├── requirements.txt          # Python dependencies
+├── main.py                   # Main script for complete pipeline
+├── src/                      # Source code
+│   ├── agents.py            # Agent behavior and rules
+│   ├── model.py             # Simulation model and TCN architecture
+│   ├── tcn.py               # TCN training code
+│   ├── data_gen.py          # Data generation utilities
+│   ├── evaluate.py          # Model evaluation and analysis
+│   └── visualize.py         # Visualization and animation
+├── data/                    # Data files
+├── models/                  # Trained model files
+├── results/                 # Results and outputs
+└── notebooks/               # Jupyter notebooks for exploration
+    └── Explore_and_Debug.ipynb
+```
+
+## Quick Start
+
+### Prerequisites
+- Python 3.8+
+- pip
+
+### Installation
+```bash
+pip install -r requirements.txt
+```
+
+### Run Complete Pipeline
+```bash
+python main.py
+```
+This will:
+1. Generate training data
+2. Train the TCN model
+3. Evaluate performance
+4. Create visualization
+
+### Individual Steps
+- Generate data: `python -m src.data_gen`
+- Train model: `python -m src.tcn`
+- Evaluate: `python -m src.evaluate`
+- Visualize: `python -m src.visualize`
 
 ## Methodology
-### Simulation Environment: 
-A 10×10 grid with 30 agents, built using the Mesa framework. Each agent selects from five possible moves (Up, Down, Right, Left, No move) per step, with 2000 simulation runs generating the training dataset.
-### Data Preparation: 
-Agent positions across 10 steps (11 total, including the initial position) are processed into 360,000 sequences, each comprising 5 timesteps and 60 features (2 for the agent’s position, 58 for relative positions of the 29 other agents).
-### Model: 
-A TCN with architecture [128, 128, 128] and kernel_size=7 predicts the next move based on 5 prior steps. Training is conducted on 360,000 samples with a batch size of 64.
-### Rules:
-#### With Rules: 
-Agents leverage TCN predictions to avoid moves ("Turn Left if Occupied") and exhibit a bias toward the grid’s center (5, 5).
-#### Without Rules: 
-Agents move randomly, constrained only by grid boundaries and occupancy.
-### Training: 
-Executed over 52 epochs with early stopping, achieving a validation accuracy of 31.23% (random baseline: 20%).
+
+### Simulation Environment
+- Configurable grid size (default: 5×5)
+- Variable number of agents (default: 3)
+- Built using Mesa framework
+
+### Data Preparation
+- Agents collect position and relative position data over multiple timesteps
+- Sequences of 5 timesteps used for prediction
+- Features: agent position (2) + relative positions of other agents (10)
+
+### Model
+- Temporal Convolutional Network (TCN)
+- Predicts collision probability based on recent history
+- Used for retrocausal decision making
+
+### Rules
+- **With Rules**: Agents use TCN predictions to avoid collisions
+- **Without Rules**: Random movement with basic collision avoidance
+
+## Results
+Check the `results/` directory for:
+- Model evaluation metrics
+- Confusion matrices
+- Feature importance analysis
+- Simulation animations (GIF)
+
+## Development
+Use the Jupyter notebook in `notebooks/` for interactive exploration and debugging.
