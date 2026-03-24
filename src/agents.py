@@ -7,8 +7,48 @@ import pathlib
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.model_selection import train_test_split
 import torch.nn as nn
-from simulation_core import RetroAgent, RetroModel, TCN
-from train_model import prepare_training_data
+from .model import RetroAgent, RetroModel, TCN
+
+# Helper function to prepare training data
+def prepare_training_data(data, seq_len=5):
+    """Convert raw data records to sequences for TCN training.
+    
+    Args:
+        data: List of data dicts with keys 'rel_pos', 'collision', 'step', 'agent_id'
+        seq_len: Sequence length for TCN
+    
+    Returns:
+        X: [num_sequences, seq_len, num_features]
+        y: [num_sequences] collision labels
+    """
+    X, y = [], []
+    data_by_agent = {}
+    
+    for record in data:
+        agent_id = record.get('agent_id', 0)
+        if agent_id not in data_by_agent:
+            data_by_agent[agent_id] = []
+        data_by_agent[agent_id].append(record)
+    
+    for agent_id, agent_data in data_by_agent.items():
+        agent_data = sorted(agent_data, key=lambda x: x.get('step', 0))
+        
+        for i in range(len(agent_data) - seq_len):
+            seq = agent_data[i:i+seq_len]
+            features = []
+            for record in seq:
+                rel_pos = record.get('rel_pos', [0]*10)
+                if isinstance(rel_pos, list):
+                    features.extend(rel_pos)
+                else:
+                    features.extend(rel_pos.tolist() if hasattr(rel_pos, 'tolist') else [0]*10)
+            
+            if len(features) == seq_len * 10:  # Ensure correct feature dimension
+                X.append(features)
+                label = agent_data[i+seq_len-1].get('collision', 0)
+                y.append(label)
+    
+    return np.array(X), np.array(y)
 
 # 1. Define Deterministic Agent
 class DeterministicAgent(RetroAgent):

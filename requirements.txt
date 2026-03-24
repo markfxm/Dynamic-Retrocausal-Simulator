@@ -1,5 +1,13 @@
-torch
-numpy
-mesa
-scikit-learn
-matplotlib
+# Core simulation & ML
+mesa==2.3.0                 # 明确指定版本，避免未来 Mesa 升级破坏兼容性
+# torch>=2.0.0                # PyTorch 2.0+ 已经足够稳定且支持 TCN 很好
+# numpy>=1.24.0               # 推荐较新版本，与 torch 兼容更好
+
+# Data handling & visualization
+# pandas>=2.0.0               # 用于处理收集到的 agent 数据（可选但非常实用）
+matplotlib>=3.7.0           # 画轨迹、碰撞统计图
+tqdm>=4.66.0                # 进度条，跑多轮模拟时很友好
+
+# Optional but highly recommended for development
+jupyter>=1.0.0              # 如果你用 notebook 调试
+ipykernel>=6.29.0           # 让 notebook 能选 retro_env 内核
