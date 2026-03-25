@@ -10,6 +10,7 @@ The project simulates agents navigating a grid, using a Temporal Convolutional N
 Dynamic-Retrocausal-Simulator/
 ├── config.py                 # Configuration settings
 ├── requirements.txt          # Python dependencies
+├── archived_data/            # Old data
 ├── main.py                   # Main script for complete pipeline
 ├── src/                      # Source code
 │   ├── agents.py            # Agent behavior and rules
