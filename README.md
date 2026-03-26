@@ -1,4 +1,5 @@
 # Dynamic Retrocausal Simulator
+(TemporalOS)
 
 ## Overview
 This repository implements a retrocausality simulation exploring how predictive modeling and rule-based behavior affect multi-agent interactions in a constrained grid environment.
