@@ -1,3 +1,6 @@
+import pathlib
+
+from config import *
 import torch
 import torch.nn as nn
 import mesa
@@ -94,29 +97,61 @@ class RetroAgent(mesa.Agent):
             self.model.grid.move_agent(self, new_pos)
 
 class RetroModel(mesa.Model):
-    def __init__(self, allow_collisions=ALLOW_COLLISIONS, tcn_path=TCN_MODEL_PATH, width=GRID_WIDTH, height=GRID_HEIGHT, num_agents=NUM_AGENTS):
+    def __init__(self, 
+                 allow_collisions=ALLOW_COLLISIONS, 
+                 tcn_path=None, 
+                 width=GRID_WIDTH, 
+                 height=GRID_HEIGHT, 
+                 num_agents=NUM_AGENTS):
         super().__init__()
         self.grid = mesa.space.MultiGrid(width, height, torus=False)
         self.schedule = mesa.time.RandomActivation(self)
         self.allow_collisions = allow_collisions
         self.tcn = None
         
-        if tcn_path:
-            # Matches training config from notebook for 3 agents 5x5
-            self.tcn = TCN(input_size=TCN_INPUT_SIZE, num_channels=TCN_NUM_CHANNELS, kernel_size=TCN_KERNEL_SIZE, output_size=TCN_OUTPUT_SIZE)
+        # 只在明确传入有效路径时才尝试加载 TCN（数据生成时不要加载）
+        if tcn_path and pathlib.Path(tcn_path).exists():
             try:
+                self.tcn = TCN(
+                    input_size=TCN_INPUT_SIZE,
+                    num_channels=TCN_NUM_CHANNELS,
+                    kernel_size=TCN_KERNEL_SIZE,
+                    output_size=TCN_OUTPUT_SIZE
+                )
                 self.tcn.load_state_dict(torch.load(tcn_path, map_location=torch.device('cpu')))
+                print(f"TCN model loaded successfully from {tcn_path}")
             except Exception as e:
                 print(f"Warning: Could not load TCN weights: {e}")
-                
-        for i in range(num_agents):
-            agent = RetroAgent(i, self, allow_collisions)
-            while True:
-                pos = (random.randint(0, width-1), random.randint(0, height-1))
-                if self.grid.is_cell_empty(pos):
-                    break
-            self.grid.place_agent(agent, pos)
-            self.schedule.add(agent)
+                self.tcn = None
+        # else: 数据生成时 tcn_path=None 或文件不存在，就不加载
 
+    def step(self):
+        self.schedule.step()
+    def __init__(self, 
+                 allow_collisions=ALLOW_COLLISIONS, 
+                 tcn_path=None,                    # 默认改成 None
+                 width=GRID_WIDTH, 
+                 height=GRID_HEIGHT, 
+                 num_agents=NUM_AGENTS):
+        super().__init__()
+        self.grid = mesa.space.MultiGrid(width, height, torus=False)
+        self.schedule = mesa.time.RandomActivation(self)
+        self.allow_collisions = allow_collisions
+        self.tcn = None
+        
+        # 只在明确传入 tcn_path 并且文件存在时才加载模型
+        if tcn_path and pathlib.Path(tcn_path).exists():
+            self.tcn = TCN(
+                input_size=TCN_INPUT_SIZE,
+                num_channels=TCN_NUM_CHANNELS,
+                kernel_size=TCN_KERNEL_SIZE,
+                output_size=TCN_OUTPUT_SIZE
+            )
+            try:
+                self.tcn.load_state_dict(torch.load(tcn_path, map_location=torch.device('cpu')))
+                print(f"TCN model loaded successfully from {tcn_path}")
+            except Exception as e:
+                print(f"Warning: Could not load TCN weights: {e}")
+                self.tcn = None
     def step(self):
         self.schedule.step()

@@ -1,30 +1,34 @@
 import pickle
 import random
-import torch
-import numpy as np
-from config import GRID_WIDTH, GRID_HEIGHT, NUM_AGENTS, MIXED_DATA_PATH
+from tqdm import tqdm
+from config import *
 from src.model import RetroModel
 
-def generate_data(num_runs=1000, steps_per_run=50, filename=MIXED_DATA_PATH):
-    """
-    Generate training data by running multiple simulations.
-    Each run collects agent positions, relative positions, and collision flags.
-    """
+def generate_data(num_runs=300, steps_per_run=STEPS, filename=MIXED_DATA_PATH, collision_boost=True):
     all_data = []
+    total_collisions = 0
 
-    for run in range(num_runs):
-        # Create model with collisions allowed for data generation
-        model = RetroModel(width=GRID_WIDTH, height=GRID_HEIGHT, num_agents=NUM_AGENTS, allow_collisions=True)
+    print(f"🚀 开始生成 {num_runs} runs 数据...")
+
+    for run in tqdm(range(num_runs), desc="Generating"):
+        # 每次都新建干净的 model（数据生成时不要加载 TCN）
+        model = RetroModel(
+            allow_collisions=True,
+            tcn_path=None,                    # 关键：强制不加载 TCN
+            width=GRID_WIDTH,
+            height=GRID_HEIGHT,
+            num_agents=NUM_AGENTS
+        )
 
         run_data = []
 
         for step in range(steps_per_run):
-            # Record state before step
-            for agent in model.schedule.agents:
+            # 记录当前状态
+            for agent in list(model.schedule.agents):
                 agent_id = agent.unique_id
                 pos = agent.pos
                 rel_pos = agent.get_relative_positions()
-                # Check if this position collides with others
+
                 others_pos = [a.pos for a in model.schedule.agents if a.unique_id != agent_id]
                 collision = 1 if pos in others_pos else 0
 
@@ -37,22 +41,29 @@ def generate_data(num_runs=1000, steps_per_run=50, filename=MIXED_DATA_PATH):
                 }
                 run_data.append(step_data)
 
-            # Step the model
+                if collision and agent_id == 0:
+                    total_collisions += 1
+
+            # 执行移动
             model.step()
 
         all_data.append(run_data)
-        if (run + 1) % 100 == 0:
-            print(f"Completed {run + 1}/{num_runs} runs")
 
-    # Save to file
+    # 保存
     with open(filename, 'wb') as f:
         pickle.dump(all_data, f)
 
-    print(f"Data saved to {filename}")
-    print(f"Total runs: {len(all_data)}")
-    print(f"Total data points: {sum(len(run) for run in all_data)}")
+    total_points = sum(len(run) for run in all_data)
+    collision_rate = total_collisions / total_points if total_points > 0 else 0
+
+    print("\n✅ 数据生成完成！")
+    print(f"   Total runs: {len(all_data)}")
+    print(f"   Total data points: {total_points}")
+    print(f"   Total collisions (Agent 0): {total_collisions}")
+    print(f"   Collision rate: {collision_rate:.4f} ({collision_rate*100:.2f}%)")
 
     return all_data
 
+
 if __name__ == "__main__":
-    generate_data()
+    generate_data(num_runs=200)
