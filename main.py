@@ -10,7 +10,7 @@ import torch
 from config import *
 from src.data_gen import generate_data
 from src.tcn import train
-from src.evaluate import evaluate_model
+from src.evaluate import evaluate_model, run_analysis
 from src.visualize import create_animation
 
 def main():
@@ -33,7 +33,7 @@ def main():
 
     # Step 3: Evaluate the model
     print("\n3. Evaluating model performance...")
-    evaluate_model()
+    run_analysis()
 
     # Step 4: Create visualization
     print("\n4. Creating visualization...")
